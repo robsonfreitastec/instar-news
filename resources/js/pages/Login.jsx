@@ -95,7 +95,7 @@ export default function Login() {
           <div className="text-sm text-center text-gray-600">
             <p className="mb-2 font-semibold">Credenciais de demonstração:</p>
             <div className="space-y-1 text-left bg-gray-100 p-3 rounded">
-              <p><strong>Super Admin:</strong> admin@example.com</p>
+              <p><strong>Super Admin:</strong> admin@instar.com</p>
               <p><strong>Portal Globo News:</strong> carlos.silva@globonews.com.br</p>
               <p><strong>Folha de São Paulo:</strong> joao.oliveira@folha.com.br</p>
               <p><strong>Estadão Digital:</strong> pedro.almeida@estadao.com.br</p>

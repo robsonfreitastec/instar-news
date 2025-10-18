@@ -23,12 +23,12 @@ class DatabaseSeeder extends Seeder
         // Create Super Admin
         $superAdmin = User::create([
             'name' => 'Administrador Geral',
-            'email' => 'admin@example.com',
+            'email' => 'admin@instar.com',
             'password' => Hash::make('password'),
             'is_super_admin' => true,
         ]);
 
-        $this->command->info('✅ Super Admin created: admin@example.com / password');
+        $this->command->info('✅ Super Admin created: admin@instar.com / password');
 
         // Create Tenants with Portuguese names
         $tenantGlobo = Tenant::create([
@@ -218,7 +218,7 @@ class DatabaseSeeder extends Seeder
         $this->command->info('========================================');
         $this->command->newLine();
         $this->command->info('👤 Credentials:');
-        $this->command->info('Super Admin: admin@example.com / password');
+        $this->command->info('Super Admin: admin@instar.com / password');
         $this->command->newLine();
         $this->command->info('Portal Globo News:');
         $this->command->info('  Admin: carlos.silva@globonews.com.br / password');

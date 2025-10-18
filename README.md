@@ -14,7 +14,6 @@ Sistema completo de gerenciamento de notícias multi-tenant com Laravel 12, Reac
 - [Características](#-características)
 - [Pré-requisitos](#-pré-requisitos)
 - [Instalação Rápida](#-instalação-rápida)
-- [Arquitetura](#-arquitetura)
 - [Estrutura do Projeto](#-estrutura-do-projeto)
 - [URLs e Acessos](#-urls-e-acessos)
 - [Credenciais de Teste](#-credenciais-de-teste)
@@ -23,8 +22,6 @@ Sistema completo de gerenciamento de notícias multi-tenant com Laravel 12, Reac
 - [Testes](#-testes)
 - [Multi-Tenancy](#-multi-tenancy)
 - [Segurança e Boas Práticas](#-segurança-e-boas-práticas)
-- [Comandos Úteis](#-comandos-úteis)
-- [Troubleshooting](#-troubleshooting)
 
 ---
 
@@ -110,100 +107,9 @@ Server started on [http://0.0.0.0:8000]
 
 ### 4. Acesse o sistema
 
-- **Frontend (Interface Web)**: http://localhost:5173
+- **Frontend (Interface Web)**: http://localhost:8000
 - **API Backend**: http://localhost:8000/api
 - **Documentação Swagger**: http://localhost:8000/api/documentation
-
----
-
-## 🏗️ Arquitetura
-
-### Stack Tecnológica
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                     FRONTEND (React)                    │
-│  React 18 + Vite + Tailwind CSS + React Router          │
-│  Porta: 5173 (Vite Dev Server com HMR)                  │
-└──────────────────────┬──────────────────────────────────┘
-                       │ HTTP/REST API (axios)
-                       ↓
-┌─────────────────────────────────────────────────────────┐
-│                   BACKEND (Laravel)                     │
-│  Laravel 12 + PHP 8.3 + JWT Auth                        │
-│  Porta: 8000 (Laravel Artisan Serve)                    │
-└──────────────────────┬──────────────────────────────────┘
-                       │ Eloquent ORM
-                       ↓
-┌─────────────────────────────────────────────────────────┐
-│                 DATABASE (PostgreSQL)                   │
-│  PostgreSQL 15                                           │
-│  Porta: 5432                                             │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Padrão de Camadas (Clean Architecture)
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                       HTTP Request                       │
-└──────────────────────┬──────────────────────────────────┘
-                       ↓
-┌─────────────────────────────────────────────────────────┐
-│  CONTROLLER (Api/NewsController)                        │
-│  - Recebe requisição HTTP                               │
-│  - Delega para Service                                  │
-│  - Retorna Response (JSON)                              │
-└──────────────────────┬──────────────────────────────────┘
-                       ↓
-┌─────────────────────────────────────────────────────────┐
-│  REQUEST (CreateNewsRequest)                            │
-│  - Valida dados de entrada                              │
-│  - Regras de validação Laravel                          │
-└──────────────────────┬──────────────────────────────────┘
-                       ↓
-┌─────────────────────────────────────────────────────────┐
-│  SERVICE (NewsService)                                  │
-│  - Lógica de negócio                                    │
-│  - Autorização (Policies)                               │
-│  - Orquestra Actions                                    │
-│  - Tratamento de exceções                               │
-└──────────────────────┬──────────────────────────────────┘
-                       ↓
-┌─────────────────────────────────────────────────────────┐
-│  ACTION (CreateNewsAction)                              │
-│  - Operação atômica única                               │
-│  - Single Responsibility                                │
-│  - Reutilizável                                         │
-└──────────────────────┬──────────────────────────────────┘
-                       ↓
-┌─────────────────────────────────────────────────────────┐
-│  MODEL (News)                                           │
-│  - Eloquent ORM                                         │
-│  - Relacionamentos                                      │
-│  - Traits (LogsActivity, UsesUuid)                      │
-└──────────────────────┬──────────────────────────────────┘
-                       ↓
-┌─────────────────────────────────────────────────────────┐
-│                    DATABASE (PostgreSQL)                 │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Exceções Customizadas
-
-```php
-try {
-    $service->create($data);
-} catch (NotFoundException $e) {
-    return response()->json(['error' => $e->getMessage()], 404);
-} catch (UnauthorizedException $e) {
-    return response()->json(['error' => $e->getMessage()], 403);
-} catch (BusinessException $e) {
-    return response()->json(['error' => $e->getMessage()], 400);
-} catch (ValidationException $e) {
-    return response()->json(['error' => $e->getMessage()], 422);
-}
-```
 
 ---
 
@@ -357,7 +263,7 @@ resources/
 
 | Serviço | URL | Descrição |
 |---------|-----|-----------|
-| **Frontend (React)** | http://localhost:5173 | Interface web principal (Vite dev server) |
+| **Frontend (React)** | http://localhost:8000 | Interface web principal (Vite dev server) |
 | **Backend API** | http://localhost:8000/api | API REST Laravel |
 | **Swagger/OpenAPI** | http://localhost:8000/api/documentation | Documentação interativa da API |
 | **PostgreSQL** | localhost:5432 | Banco de dados (acesso via cliente SQL) |
@@ -379,7 +285,7 @@ Os seeders criam automaticamente os seguintes usuários:
 ### 🔴 Super Administrador (Acesso Total)
 
 ```
-Email: admin@example.com
+Email: admin@instar.com
 Senha: password
 
 Permissões:
@@ -393,17 +299,17 @@ Permissões:
 
 **Administrador:**
 ```
-Email: admin.a@example.com
+Email: carlos.silva@globonews.com.br
 Senha: password
-Tenant: Tenant A
+Tenant: Portal Globo News
 Role: admin
 ```
 
 **Editor:**
 ```
-Email: editor.a@example.com
+Email: maria.santos@globonews.com.br
 Senha: password
-Tenant: Tenant A
+Tenant: Portal Globo News
 Role: editor
 ```
 
@@ -411,17 +317,17 @@ Role: editor
 
 **Administrador:**
 ```
-Email: admin.b@example.com
+Email: joao.oliveira@folha.com.br
 Senha: password
-Tenant: Tenant B
+Tenant: Folha de São Paulo
 Role: admin
 ```
 
 **Editor:**
 ```
-Email: editor.b@example.com
+Email: ana.costa@folha.com.br
 Senha: password
-Tenant: Tenant B
+Tenant: Folha de São Paulo
 Role: editor
 ```
 
@@ -501,7 +407,7 @@ Role: editor
 # 1. Login
 curl -X POST http://localhost:8000/api/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@example.com","password":"password"}'
+  -d '{"email":"admin@instar.com","password":"password"}'
 
 # Resposta: { "token": "eyJ0eXAiOiJKV1QiLCJhbGc...", ... }
 
@@ -775,237 +681,6 @@ Antes de deploy em produção:
 - [ ] Logs centralizados
 - [ ] Monitoring e alertas
 - [ ] Desabilitar Swagger em produção
-
----
-
-## 🛠️ Comandos Úteis
-
-### Docker
-
-```bash
-# Iniciar containers
-docker-compose up
-
-# Iniciar em background
-docker-compose up -d
-
-# Rebuild completo
-docker-compose up --build
-
-# Parar containers
-docker-compose down
-
-# Parar e remover volumes (limpa banco)
-docker-compose down -v
-
-# Ver logs em tempo real
-docker-compose logs -f
-
-# Ver logs de um serviço específico
-docker-compose logs -f app
-docker-compose logs -f db
-docker-compose logs -f node
-
-# Status dos containers
-docker-compose ps
-
-# Reiniciar um serviço
-docker-compose restart app
-```
-
-### Laravel (dentro do container)
-
-```bash
-# Acessar bash do container
-docker exec -it laravel_app bash
-
-# Migrations
-docker exec -it laravel_app php artisan migrate
-docker exec -it laravel_app php artisan migrate:fresh --seed
-
-# Seeders
-docker exec -it laravel_app php artisan db:seed
-
-# Cache
-docker exec -it laravel_app php artisan cache:clear
-docker exec -it laravel_app php artisan config:clear
-docker exec -it laravel_app php artisan route:clear
-docker exec -it laravel_app php artisan view:clear
-
-# JWT
-docker exec -it laravel_app php artisan jwt:secret --force
-
-# Swagger
-docker exec -it laravel_app php artisan l5-swagger:generate
-
-# Rotas
-docker exec -it laravel_app php artisan route:list
-
-# Testes
-docker exec -it laravel_app php artisan test
-
-# Code Style (Laravel Pint)
-docker exec -it laravel_app ./vendor/bin/pint
-```
-
-### Composer
-
-```bash
-# Instalar dependências
-docker exec -it laravel_app composer install
-
-# Atualizar dependências
-docker exec -it laravel_app composer update
-
-# Adicionar pacote
-docker exec -it laravel_app composer require nome/pacote
-```
-
-### NPM (Node/Vite)
-
-```bash
-# Reinstalar dependências
-docker-compose restart node
-
-# Ver logs do Vite
-docker-compose logs -f node
-
-# Build para produção
-docker exec -it node_vite npm run build
-```
-
-### PostgreSQL
-
-```bash
-# Acessar psql
-docker exec -it postgres_db psql -U laravel -d laravel
-
-# Backup
-docker exec -it postgres_db pg_dump -U laravel laravel > backup.sql
-
-# Restore
-docker exec -i postgres_db psql -U laravel laravel < backup.sql
-```
-
----
-
-## 🐛 Troubleshooting
-
-### Problema: Erro de permissão no Laravel
-
-**Solução:**
-```bash
-docker exec -it laravel_app chmod -R 775 storage bootstrap/cache
-docker exec -it laravel_app chown -R www-data:www-data storage bootstrap/cache
-```
-
-### Problema: JWT Secret não configurado
-
-**Sintoma:** `The token could not be parsed from the request`
-
-**Solução:**
-```bash
-docker exec -it laravel_app php artisan jwt:secret --force
-```
-
-### Problema: APP_KEY não configurado
-
-**Sintoma:** `No application encryption key has been specified`
-
-**Solução:**
-```bash
-docker exec -it laravel_app php artisan key:generate
-```
-
-### Problema: Migrations não executaram
-
-**Solução:**
-```bash
-docker exec -it laravel_app php artisan migrate:fresh --seed
-```
-
-### Problema: Vite não conecta (HMR)
-
-**Sintoma:** Frontend carrega mas não atualiza automaticamente
-
-**Solução:**
-```bash
-# Verificar se porta 5173 está livre
-lsof -i :5173
-
-# Reiniciar container node
-docker-compose restart node
-
-# Verificar logs
-docker-compose logs -f node
-```
-
-### Problema: PostgreSQL connection refused
-
-**Solução:**
-```bash
-# Verificar se container db está rodando
-docker-compose ps
-
-# Verificar credenciais no .env
-DB_HOST=db  # Nome do serviço no docker-compose
-DB_PORT=5432
-DB_DATABASE=laravel
-DB_USERNAME=laravel
-DB_PASSWORD=secret
-
-# Reiniciar db
-docker-compose restart db
-```
-
-### Problema: Swagger não aparece
-
-**Solução:**
-```bash
-docker exec -it laravel_app php artisan l5-swagger:generate
-```
-
-### Problema: Frontend não carrega React
-
-**Solução:**
-```bash
-# Limpar cache do navegador (Ctrl+F5)
-
-# Verificar se Vite está rodando
-docker-compose logs node
-
-# Rebuild assets
-docker-compose restart node
-```
-
-### Problema: Porta já em uso
-
-**Sintoma:** `Bind for 0.0.0.0:8000 failed: port is already allocated`
-
-**Solução:**
-```bash
-# Encontrar processo usando a porta
-sudo lsof -i :8000
-sudo lsof -i :5173
-
-# Matar processo
-sudo kill -9 <PID>
-
-# Ou mudar porta no docker-compose.yml
-```
-
-### Problema: Limpar tudo e recomeçar
-
-```bash
-# Limpeza completa
-docker-compose down -v
-docker system prune -a
-rm -rf vendor node_modules .env
-cp env.example .env
-
-# Rebuild
-docker-compose up --build
-```
 
 ---
 
