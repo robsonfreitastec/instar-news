@@ -141,16 +141,6 @@ class NewsService
             if (! in_array($news->tenant_id, $userTenantIds)) {
                 throw new \App\Exceptions\UnauthorizedException('You do not have permission to update this news.');
             }
-
-            $isAuthor = $news->author_id === $currentUser->id;
-            $isAdminOfTenant = $currentUser->tenants()
-                ->where('tenant_id', $news->tenant_id)
-                ->wherePivot('role', 'admin')
-                ->exists();
-
-            if (! $isAuthor && ! $isAdminOfTenant) {
-                throw new \App\Exceptions\UnauthorizedException('Only the author or tenant admin can update this news.');
-            }
         }
 
         return $this->updateNewsAction->execute($news, $data);
