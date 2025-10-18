@@ -100,10 +100,18 @@ docker-compose up --build
 
 **Aguarde até ver a mensagem:**
 ```
+Setup completed successfully!
 Server started on [http://0.0.0.0:8000]
 ```
 
 ⏱️ **Tempo estimado**: 5-10 minutos na primeira vez.
+
+> **Nota**: O sistema executa automaticamente:
+> - ✅ Instalação de dependências
+> - ✅ Geração de chaves (APP_KEY e JWT_SECRET)
+> - ✅ Migrations do banco de dados
+> - ✅ Seeds (dados de teste)
+> - ✅ Geração da documentação Swagger
 
 ### 4. Acesse o sistema
 

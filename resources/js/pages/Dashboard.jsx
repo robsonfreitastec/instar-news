@@ -18,17 +18,25 @@ export default function Dashboard() {
 
   const fetchCounts = async () => {
     try {
-      const [newsRes, tenantsRes, usersRes, logsRes] = await Promise.all([
+      const requests = [
         axios.get('/api/news?per_page=1'),
         user?.is_super_admin ? axios.get('/api/tenants?per_page=1') : Promise.resolve({ data: { meta: { total: 0 } } }),
-        user?.is_super_admin ? axios.get('/api/users?per_page=1') : Promise.resolve({ data: { data: [] } }),
-        axios.get('/api/logs?per_page=1'),
-      ]);
+        user?.is_super_admin ? axios.get('/api/users?per_page=1') : Promise.resolve({ data: { meta: { total: 0 } } }),
+      ];
+
+      if (user?.is_super_admin) {
+        requests.push(axios.get('/api/logs?per_page=1'));
+      }
+
+      const results = await Promise.all(requests);
+      const [newsRes, tenantsRes, usersRes, logsRes] = results;
       
       setNewsCount(newsRes.data.meta?.total || 0);
       setTenantsCount(tenantsRes.data.meta?.total || 0);
-      setUsersCount(usersRes.data.data?.length || 0);
-      setLogsCount(logsRes.data.meta?.total || 0);
+      setUsersCount(usersRes.data.meta?.total || 0);
+      if (user?.is_super_admin && logsRes) {
+        setLogsCount(logsRes.data.meta?.total || 0);
+      }
     } catch (err) {
       console.error('Erro ao carregar contagens:', err);
     } finally {
@@ -240,52 +248,54 @@ export default function Dashboard() {
         )}
 
         {/* Logs */}
-        <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-6 w-6 text-orange-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+        {user?.is_super_admin && (
+          <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-6 w-6 text-orange-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Logs de Atividade
+                    </dt>
+                    <dd className="mt-1 text-sm text-gray-900">
+                      Auditoria e rastreamento
+                    </dd>
+                    <dd className="mt-2">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-orange-100 text-orange-800">
+                        {loading ? '...' : `${logsCount} registros`}
+                      </span>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gray-50 px-5 py-3">
+              <div className="text-sm">
+                <Link
+                  to="/logs"
+                  className="font-medium text-instar-primary hover:text-instar-primary-dark"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-                  />
-                </svg>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Logs de Atividade
-                  </dt>
-                  <dd className="mt-1 text-sm text-gray-900">
-                    Auditoria e rastreamento
-                  </dd>
-                  <dd className="mt-2">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-orange-100 text-orange-800">
-                      {loading ? '...' : `${logsCount} registros`}
-                    </span>
-                  </dd>
-                </dl>
+                  Ver logs →
+                </Link>
               </div>
             </div>
           </div>
-          <div className="bg-gray-50 px-5 py-3">
-            <div className="text-sm">
-              <Link
-                to="/logs"
-                className="font-medium text-instar-primary hover:text-instar-primary-dark"
-              >
-                Ver logs →
-              </Link>
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* Documentação da API */}
         <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">

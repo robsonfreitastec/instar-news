@@ -1,16 +1,36 @@
+# Git
 .git
 .gitignore
-.env
+.gitattributes
+
+# Node
 node_modules
-vendor
-storage/logs/*
-storage/framework/cache/*
-storage/framework/sessions/*
-storage/framework/views/*
-bootstrap/cache/*
-.phpunit.result.cache
 npm-debug.log
-yarn-error.log
+
+# Laravel
+/vendor
+/storage/*.key
+/storage/logs
+/storage/framework
+.env
+.env.backup
+.env.production
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
 Thumbs.db
 
+# Testing
+/coverage
+/.phpunit.cache
+
+# Documentation
+README.md
+CHANGELOG.md
