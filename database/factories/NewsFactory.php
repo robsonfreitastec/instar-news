@@ -22,6 +22,7 @@ class NewsFactory extends Factory
         return [
             'title' => fake()->sentence(),
             'content' => fake()->paragraphs(5, true),
+            'status' => fake()->randomElement(News::getAvailableStatuses()),
             'tenant_id' => Tenant::factory(),
             'author_id' => User::factory(),
         ];
@@ -44,6 +45,46 @@ class NewsFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'author_id' => $authorId,
+        ]);
+    }
+
+    /**
+     * Create a draft news.
+     */
+    public function draft(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => News::STATUS_DRAFT,
+        ]);
+    }
+
+    /**
+     * Create a published news.
+     */
+    public function published(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => News::STATUS_PUBLISHED,
+        ]);
+    }
+
+    /**
+     * Create an archived news.
+     */
+    public function archived(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => News::STATUS_ARCHIVED,
+        ]);
+    }
+
+    /**
+     * Create a trashed news.
+     */
+    public function trashed(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => News::STATUS_TRASH,
         ]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\News;
 
+use App\Models\News;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateNewsRequest extends FormRequest
@@ -24,6 +25,7 @@ class UpdateNewsRequest extends FormRequest
         return [
             'title' => ['sometimes', 'string', 'max:255'],
             'content' => ['sometimes', 'string'],
+            'status' => ['sometimes', 'string', 'in:'.implode(',', News::getAvailableStatuses())],
         ];
     }
 

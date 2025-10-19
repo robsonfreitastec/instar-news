@@ -3,25 +3,46 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axios from '../config/axios';
 import Breadcrumb from '../components/Breadcrumb';
 import { useToast } from '../contexts/ToastContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function NewsForm() {
   const { uuid } = useParams();
   const navigate = useNavigate();
   const isEdit = !!uuid;
   const toast = useToast();
+  const { user } = useAuth();
 
   const [formData, setFormData] = useState({
     title: '',
     content: '',
+    status: 'draft',
+    tenant_uuid: '',
   });
+  const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (user?.is_super_admin) {
+      fetchTenants();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (isEdit) {
       fetchNews();
     }
   }, [uuid]);
+
+  const fetchTenants = async () => {
+    try {
+      const response = await axios.get('/api/tenants?per_page=1000');
+      setTenants(response.data.data);
+    } catch (err) {
+      console.error('Erro ao carregar tenants:', err);
+      toast.error('Erro ao carregar lista de tenants');
+    }
+  };
 
   const fetchNews = async () => {
     try {
@@ -30,6 +51,8 @@ export default function NewsForm() {
       setFormData({
         title: newsData.title,
         content: newsData.content,
+        status: newsData.status || 'draft',
+        tenant_uuid: newsData.tenant?.uuid || '',
       });
     } catch (err) {
       setError('Erro ao carregar notícia');
@@ -49,14 +72,34 @@ export default function NewsForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Validação: Super Admin deve selecionar um tenant ao criar
+    if (user?.is_super_admin && !isEdit && !formData.tenant_uuid) {
+      setError('Por favor, selecione um tenant para esta notícia.');
+      toast.error('Selecione um tenant');
+      return;
+    }
+
     setLoading(true);
 
     try {
+      // Preparar dados para envio
+      const dataToSend = {
+        title: formData.title,
+        content: formData.content,
+        status: formData.status,
+      };
+
+      // Adicionar tenant_uuid somente se for super admin e estiver criando
+      if (user?.is_super_admin && !isEdit && formData.tenant_uuid) {
+        dataToSend.tenant_uuid = formData.tenant_uuid;
+      }
+
       if (isEdit) {
-        await axios.put(`/api/news/${uuid}`, formData);
+        await axios.put(`/api/news/${uuid}`, dataToSend);
         toast.success('Notícia atualizada com sucesso!');
       } else {
-        await axios.post('/api/news', formData);
+        await axios.post('/api/news', dataToSend);
         toast.success('Notícia criada com sucesso!');
       }
       navigate('/news');
@@ -114,6 +157,54 @@ export default function NewsForm() {
               />
             </div>
 
+            {/* Select de Tenant - Somente para Super Admin */}
+            {user?.is_super_admin && !isEdit && (
+              <div>
+                <label
+                  htmlFor="tenant_uuid"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Tenant <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="tenant_uuid"
+                  id="tenant_uuid"
+                  required
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  value={formData.tenant_uuid}
+                  onChange={handleChange}
+                >
+                  <option value="">Selecione um tenant</option>
+                  {tenants.map((tenant) => (
+                    <option key={tenant.uuid} value={tenant.uuid}>
+                      {tenant.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-sm text-gray-500">
+                  <span className="font-semibold">Super Admin:</span> Você deve especificar a qual tenant esta notícia pertence.
+                </p>
+              </div>
+            )}
+
+            {user?.is_super_admin && isEdit && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Tenant
+                </label>
+                <div className="mt-1 block w-full border border-gray-200 rounded-md bg-gray-50 py-2 px-3 text-sm text-gray-600">
+                  {formData.tenant_uuid ? (
+                    tenants.find(t => t.uuid === formData.tenant_uuid)?.name || 'Carregando...'
+                  ) : (
+                    'Não especificado'
+                  )}
+                </div>
+                <p className="mt-2 text-sm text-gray-500">
+                  O tenant não pode ser alterado após a criação da notícia.
+                </p>
+              </div>
+            )}
+
             <div>
               <label
                 htmlFor="content"
@@ -131,6 +222,30 @@ export default function NewsForm() {
                 value={formData.content}
                 onChange={handleChange}
               />
+            </div>
+
+            <div>
+              <label
+                htmlFor="status"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Status de Publicação
+              </label>
+              <select
+                name="status"
+                id="status"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                value={formData.status}
+                onChange={handleChange}
+              >
+                <option value="draft">📝 Rascunho</option>
+                <option value="published">✅ Publicado</option>
+                <option value="archived">📦 Arquivado</option>
+                <option value="trash">🗑️ Lixeira</option>
+              </select>
+              <p className="mt-2 text-sm text-gray-500">
+                Escolha o status da notícia. Rascunhos não são visíveis publicamente.
+              </p>
             </div>
           </div>
 

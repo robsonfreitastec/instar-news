@@ -381,6 +381,20 @@
                         }
                     },
                     {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by status (draft, published, archived, trash)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "draft",
+                                "published",
+                                "archived",
+                                "trash"
+                            ]
+                        }
+                    },
+                    {
                         "name": "per_page",
                         "in": "query",
                         "description": "Items per page",
@@ -428,6 +442,17 @@
                                     "content": {
                                         "type": "string",
                                         "example": "This is the news content..."
+                                    },
+                                    "status": {
+                                        "description": "Publication status (default: draft)",
+                                        "type": "string",
+                                        "enum": [
+                                            "draft",
+                                            "published",
+                                            "archived",
+                                            "trash"
+                                        ],
+                                        "example": "draft"
                                     },
                                     "tenant_uuid": {
                                         "description": "Tenant UUID (required for Super Admin, optional for regular users)",
@@ -530,6 +555,17 @@
                                     "content": {
                                         "type": "string",
                                         "example": "Updated content..."
+                                    },
+                                    "status": {
+                                        "description": "Publication status",
+                                        "type": "string",
+                                        "enum": [
+                                            "draft",
+                                            "published",
+                                            "archived",
+                                            "trash"
+                                        ],
+                                        "example": "published"
                                     }
                                 },
                                 "type": "object"

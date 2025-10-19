@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\News;
 
+use App\Models\News;
 use Illuminate\Foundation\Http\FormRequest;
 
 class CreateNewsRequest extends FormRequest
@@ -24,6 +25,7 @@ class CreateNewsRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'content' => ['required', 'string'],
+            'status' => ['nullable', 'string', 'in:'.implode(',', News::getAvailableStatuses())],
             'tenant_uuid' => ['nullable', 'string', 'uuid'],
         ];
     }

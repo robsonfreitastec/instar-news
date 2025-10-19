@@ -88,3 +88,72 @@ test('editor can edit news from their tenant', function () {
         'title' => 'Updated Title',
     ]);
 });
+
+test('user can create news with specific status', function () {
+    $token = auth()->login($this->admin);
+
+    $response = $this->withHeader('Authorization', "Bearer {$token}")
+        ->withHeader('X-Tenant-ID', $this->tenant->id)
+        ->postJson('/api/news', [
+            'title' => 'Published News',
+            'content' => 'Published content',
+            'status' => 'published',
+        ]);
+
+    $response->assertStatus(201);
+    $this->assertDatabaseHas('news', [
+        'title' => 'Published News',
+        'status' => 'published',
+    ]);
+});
+
+test('user can filter news by status', function () {
+    News::factory()->published()->create([
+        'tenant_id' => $this->tenant->id,
+        'author_id' => $this->admin->id,
+    ]);
+    News::factory()->draft()->create([
+        'tenant_id' => $this->tenant->id,
+        'author_id' => $this->admin->id,
+    ]);
+
+    $token = auth()->login($this->admin);
+
+    $response = $this->withHeader('Authorization', "Bearer {$token}")
+        ->getJson('/api/news?status=published');
+
+    $response->assertStatus(200);
+    expect($response->json('data'))->toHaveCount(1);
+});
+
+test('user can update news status', function () {
+    $token = auth()->login($this->admin);
+
+    $response = $this->withHeader('Authorization', "Bearer {$token}")
+        ->putJson("/api/news/{$this->news->uuid}", [
+            'status' => 'published',
+        ]);
+
+    $response->assertStatus(200);
+    $this->assertDatabaseHas('news', [
+        'uuid' => $this->news->uuid,
+        'status' => 'published',
+    ]);
+});
+
+test('news defaults to draft status when not specified', function () {
+    $token = auth()->login($this->admin);
+
+    $response = $this->withHeader('Authorization', "Bearer {$token}")
+        ->withHeader('X-Tenant-ID', $this->tenant->id)
+        ->postJson('/api/news', [
+            'title' => 'Draft News',
+            'content' => 'Draft content',
+        ]);
+
+    $response->assertStatus(201);
+    $this->assertDatabaseHas('news', [
+        'title' => 'Draft News',
+        'status' => 'draft',
+    ]);
+});

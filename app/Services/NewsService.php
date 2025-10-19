@@ -23,6 +23,7 @@ class NewsService
         ?string $tenantUuid = null,
         ?string $authorUuid = null,
         ?string $search = null,
+        ?string $status = null,
         int $perPage = 15
     ): LengthAwarePaginator {
         $query = News::with(['author', 'tenant']);
@@ -47,6 +48,10 @@ class NewsService
             if ($author) {
                 $query->where('author_id', $author->id);
             }
+        }
+
+        if ($status && in_array($status, News::getAvailableStatuses())) {
+            $query->withStatus($status);
         }
 
         if ($search) {
@@ -89,6 +94,7 @@ class NewsService
         $newsData = NewsData::fromArray([
             'title' => $data['title'],
             'content' => $data['content'],
+            'status' => $data['status'] ?? News::STATUS_DRAFT,
             'tenant_id' => $tenantId,
             'author_id' => $currentUser->id,
         ]);

@@ -67,6 +67,14 @@ class NewsController extends Controller
      *     ),
      *
      *     @OA\Parameter(
+     *         name="status",
+     *         in="query",
+     *         description="Filter by status (draft, published, archived, trash)",
+     *
+     *         @OA\Schema(type="string", enum={"draft", "published", "archived", "trash"})
+     *     ),
+     *
+     *     @OA\Parameter(
      *         name="per_page",
      *         in="query",
      *         description="Items per page",
@@ -85,6 +93,7 @@ class NewsController extends Controller
             $request->input('tenant_uuid'),
             $request->input('author_uuid'),
             $request->input('search'),
+            $request->input('status'),
             $request->input('per_page', 15)
         );
 
@@ -107,6 +116,7 @@ class NewsController extends Controller
      *
      *             @OA\Property(property="title", type="string", example="Breaking News"),
      *             @OA\Property(property="content", type="string", example="This is the news content..."),
+     *             @OA\Property(property="status", type="string", enum={"draft", "published", "archived", "trash"}, example="draft", description="Publication status (default: draft)"),
      *             @OA\Property(property="tenant_uuid", type="string", format="uuid", description="Tenant UUID (required for Super Admin, optional for regular users)")
      *         )
      *     ),
@@ -194,7 +204,8 @@ class NewsController extends Controller
      *         @OA\JsonContent(
      *
      *             @OA\Property(property="title", type="string", example="Updated Title"),
-     *             @OA\Property(property="content", type="string", example="Updated content...")
+     *             @OA\Property(property="content", type="string", example="Updated content..."),
+     *             @OA\Property(property="status", type="string", enum={"draft", "published", "archived", "trash"}, example="published", description="Publication status")
      *         )
      *     ),
      *

@@ -15,6 +15,17 @@ class News extends Model
     use HasFactory, LogsActivity, SoftDeletes, UsesUuid;
 
     /**
+     * Status constants
+     */
+    public const STATUS_DRAFT = 'draft';
+
+    public const STATUS_PUBLISHED = 'published';
+
+    public const STATUS_ARCHIVED = 'archived';
+
+    public const STATUS_TRASH = 'trash';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -22,6 +33,7 @@ class News extends Model
     protected $fillable = [
         'title',
         'content',
+        'status',
         'tenant_id',
         'author_id',
     ];
@@ -59,5 +71,42 @@ class News extends Model
     public function scopeForTenant(Builder $query, int $tenantId): Builder
     {
         return $query->where('tenant_id', $tenantId);
+    }
+
+    /**
+     * Scope a query to only include news with a specific status.
+     */
+    public function scopeWithStatus(Builder $query, string $status): Builder
+    {
+        return $query->where('status', $status);
+    }
+
+    /**
+     * Scope a query to only include published news.
+     */
+    public function scopePublished(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_PUBLISHED);
+    }
+
+    /**
+     * Scope a query to exclude trashed news (status = trash).
+     */
+    public function scopeNotTrashed(Builder $query): Builder
+    {
+        return $query->where('status', '!=', self::STATUS_TRASH);
+    }
+
+    /**
+     * Get all available statuses.
+     */
+    public static function getAvailableStatuses(): array
+    {
+        return [
+            self::STATUS_DRAFT,
+            self::STATUS_PUBLISHED,
+            self::STATUS_ARCHIVED,
+            self::STATUS_TRASH,
+        ];
     }
 }

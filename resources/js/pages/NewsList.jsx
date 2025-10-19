@@ -20,6 +20,7 @@ export default function NewsList() {
   const [filters, setFilters] = useState({
     tenant_uuid: '',
     author_uuid: '',
+    status: '',
   });
   const [pagination, setPagination] = useState({
     current_page: 1,
@@ -30,6 +31,24 @@ export default function NewsList() {
   const toast = useToast();
   const { user } = useAuth();
   
+  // Render status badge with appropriate color
+  const getStatusBadge = (status) => {
+    const statusConfig = {
+      draft: { label: '📝 Rascunho', color: 'bg-gray-100 text-gray-800' },
+      published: { label: '✅ Publicado', color: 'bg-green-100 text-green-800' },
+      archived: { label: '📦 Arquivado', color: 'bg-blue-100 text-blue-800' },
+      trash: { label: '🗑️ Lixeira', color: 'bg-red-100 text-red-800' },
+    };
+
+    const config = statusConfig[status] || statusConfig.draft;
+
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
+        {config.label}
+      </span>
+    );
+  };
+
   // Check if user can edit/delete a specific news
   const canEdit = (newsItem) => {
     if (user?.is_super_admin) return true;
@@ -98,6 +117,7 @@ export default function NewsList() {
       const activeSearch = customSearch !== null ? customSearch : search;
       
       if (activeFilters.tenant_uuid) params.tenant_uuid = activeFilters.tenant_uuid;
+      if (activeFilters.status) params.status = activeFilters.status;
       if (activeFilters.author_uuid) params.author_uuid = activeFilters.author_uuid;
       if (activeSearch) params.search = activeSearch;
       
@@ -227,11 +247,10 @@ export default function NewsList() {
         </Link>
       </div>
 
-      {/* Filtros (apenas para super admin) */}
-      {user?.is_super_admin && (
-        <div className="mb-6 bg-white p-4 rounded-lg shadow">
-          <form onSubmit={handleSearch} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Filtros */}
+      <div className="mb-6 bg-white p-4 rounded-lg shadow">
+        <form onSubmit={handleSearch} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
                 <input
@@ -243,36 +262,55 @@ export default function NewsList() {
                 />
               </div>
               
+              {user?.is_super_admin && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tenant</label>
+                    <select
+                      value={filters.tenant_uuid}
+                      onChange={(e) => handleFilterChange('tenant_uuid', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-instar-primary"
+                    >
+                      <option value="">Todos os tenants</option>
+                      {tenants.map(tenant => (
+                        <option key={tenant.uuid} value={tenant.uuid}>{tenant.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Autor</label>
+                    <select
+                      value={filters.author_uuid}
+                      onChange={(e) => handleFilterChange('author_uuid', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-instar-primary"
+                      disabled={filters.tenant_uuid && filteredUsers.length === 0}
+                    >
+                      <option value="">
+                        {filters.tenant_uuid 
+                          ? `Todos os autores deste tenant (${filteredUsers.length})`
+                          : 'Todos os autores'}
+                      </option>
+                      {filteredUsers.map(u => (
+                        <option key={u.uuid} value={u.uuid}>{u.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tenant</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select
-                  value={filters.tenant_uuid}
-                  onChange={(e) => handleFilterChange('tenant_uuid', e.target.value)}
+                  value={filters.status}
+                  onChange={(e) => handleFilterChange('status', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-instar-primary"
                 >
-                  <option value="">Todos os tenants</option>
-                  {tenants.map(tenant => (
-                    <option key={tenant.uuid} value={tenant.uuid}>{tenant.name}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Autor</label>
-                <select
-                  value={filters.author_uuid}
-                  onChange={(e) => handleFilterChange('author_uuid', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-instar-primary"
-                  disabled={filters.tenant_uuid && filteredUsers.length === 0}
-                >
-                  <option value="">
-                    {filters.tenant_uuid 
-                      ? `Todos os autores deste tenant (${filteredUsers.length})`
-                      : 'Todos os autores'}
-                  </option>
-                  {filteredUsers.map(u => (
-                    <option key={u.uuid} value={u.uuid}>{u.name}</option>
-                  ))}
+                  <option value="">Todos os status</option>
+                  <option value="draft">📝 Rascunho</option>
+                  <option value="published">✅ Publicado</option>
+                  <option value="archived">📦 Arquivado</option>
+                  <option value="trash">🗑️ Lixeira</option>
                 </select>
               </div>
             </div>
@@ -285,7 +323,7 @@ export default function NewsList() {
               >
                 Aplicar
               </button>
-              {(filters.tenant_uuid || filters.author_uuid || search) && (
+              {(filters.tenant_uuid || filters.author_uuid || filters.status || search) && (
                 <button
                   type="button"
                   onClick={clearFilters}
@@ -297,7 +335,6 @@ export default function NewsList() {
             </div>
           </form>
         </div>
-      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
@@ -339,6 +376,8 @@ export default function NewsList() {
                             </span>
                           </>
                         )}
+                        <span>•</span>
+                        {getStatusBadge(item.status)}
                         <span>•</span>
                         <span>
                           {new Date(item.created_at).toLocaleDateString('pt-BR')} às{' '}
