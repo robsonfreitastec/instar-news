@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import axios from '../config/axios';
+import { newsApi, tenantsApi, usersApi, logsApi } from '../api';
 import Breadcrumb from '../components/Breadcrumb';
 
 export default function Dashboard() {
@@ -19,13 +19,13 @@ export default function Dashboard() {
   const fetchCounts = async () => {
     try {
       const requests = [
-        axios.get('/api/news?per_page=1'),
-        user?.is_super_admin ? axios.get('/api/tenants?per_page=1') : Promise.resolve({ data: { meta: { total: 0 } } }),
-        user?.is_super_admin ? axios.get('/api/users?per_page=1') : Promise.resolve({ data: { meta: { total: 0 } } }),
+        newsApi.getAll({ per_page: 1 }),
+        user?.is_super_admin ? tenantsApi.getAll({ per_page: 1 }) : Promise.resolve({ data: { meta: { total: 0 } } }),
+        user?.is_super_admin ? usersApi.getAll({ per_page: 1 }) : Promise.resolve({ data: { meta: { total: 0 } } }),
       ];
 
       if (user?.is_super_admin) {
-        requests.push(axios.get('/api/logs?per_page=1'));
+        requests.push(logsApi.getAll({ per_page: 1 }));
       }
 
       const results = await Promise.all(requests);

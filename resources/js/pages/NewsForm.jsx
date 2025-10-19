@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from '../config/axios';
 import Breadcrumb from '../components/Breadcrumb';
-import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useNews, useTenants } from '../hooks';
 
 export default function NewsForm() {
   const { uuid } = useParams();
   const navigate = useNavigate();
   const isEdit = !!uuid;
-  const toast = useToast();
   const { user } = useAuth();
+
+  const { getNewsById, createNews, updateNews, loading: newsLoading } = useNews();
+  const { tenants, fetchTenants } = useTenants();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -18,36 +19,23 @@ export default function NewsForm() {
     status: 'draft',
     tenant_uuid: '',
   });
-  const [tenants, setTenants] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (user?.is_super_admin) {
-      fetchTenants();
+      fetchTenants({ per_page: 1000 });
     }
-  }, [user]);
+  }, [user, fetchTenants]);
 
   useEffect(() => {
     if (isEdit) {
-      fetchNews();
+      loadNews();
     }
   }, [uuid]);
 
-  const fetchTenants = async () => {
+  const loadNews = async () => {
     try {
-      const response = await axios.get('/api/tenants?per_page=1000');
-      setTenants(response.data.data);
-    } catch (err) {
-      console.error('Erro ao carregar tenants:', err);
-      toast.error('Erro ao carregar lista de tenants');
-    }
-  };
-
-  const fetchNews = async () => {
-    try {
-      const response = await axios.get(`/api/news/${uuid}`);
-      const newsData = response.data.data;
+      const newsData = await getNewsById(uuid);
       setFormData({
         title: newsData.title,
         content: newsData.content,
@@ -56,8 +44,6 @@ export default function NewsForm() {
       });
     } catch (err) {
       setError('Erro ao carregar notícia');
-      toast.error('Erro ao carregar notícia');
-      console.error(err);
     }
   };
 
@@ -76,11 +62,8 @@ export default function NewsForm() {
     // Validação: Super Admin deve selecionar um tenant ao criar
     if (user?.is_super_admin && !isEdit && !formData.tenant_uuid) {
       setError('Por favor, selecione um tenant para esta notícia.');
-      toast.error('Selecione um tenant');
       return;
     }
-
-    setLoading(true);
 
     try {
       // Preparar dados para envio
@@ -96,19 +79,14 @@ export default function NewsForm() {
       }
 
       if (isEdit) {
-        await axios.put(`/api/news/${uuid}`, dataToSend);
-        toast.success('Notícia atualizada com sucesso!');
+        await updateNews(uuid, dataToSend);
       } else {
-        await axios.post('/api/news', dataToSend);
-        toast.success('Notícia criada com sucesso!');
+        await createNews(dataToSend);
       }
       navigate('/news');
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Erro ao salvar notícia';
       setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -259,10 +237,10 @@ export default function NewsForm() {
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={newsLoading}
               className="bg-green-600 border-2 border-green-600 hover:bg-green-700 hover:border-green-700 rounded-md shadow-sm py-2 px-6 inline-flex justify-center text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
             >
-              {loading ? 'Salvando...' : isEdit ? 'Atualizar' : 'Criar'}
+              {newsLoading ? 'Salvando...' : isEdit ? 'Atualizar' : 'Criar'}
             </button>
           </div>
         </form>

@@ -44,10 +44,13 @@ Sistema completo de gerenciamento de notícias multi-tenant com Laravel 12, Reac
 - ✅ **React Router**: Navegação SPA
 - ✅ **Context API**: Gerenciamento de estado global
 - ✅ **Tailwind CSS**: Design system moderno e responsivo
-- ✅ **Axios**: Cliente HTTP configurado
+- ✅ **Axios**: Cliente HTTP configurado com interceptors
 - ✅ **Toast Notifications**: Feedback visual de ações
 - ✅ **Componentização**: Componentes reutilizáveis
 - ✅ **Protected Routes**: Rotas autenticadas
+- ✅ **Custom Hooks**: Lógica de negócio encapsulada e reutilizável
+- ✅ **API Modules**: Camada de dados organizada por recurso
+- ✅ **Clean Architecture**: Separação de responsabilidades (UI → Hooks → API)
 
 ### DevOps
 - ✅ **Docker & Docker Compose**: Ambiente completamente containerizado
@@ -235,26 +238,42 @@ resources/
 │   ├── app.jsx                 # Entry point
 │   ├── App.jsx                 # Rotas principais
 │   │
-│   ├── components/
-│   │   ├── Breadcrumb.jsx
+│   ├── api/                    # 🆕 Módulos de API (camada de dados)
+│   │   ├── index.js            # Export central de todos os módulos
+│   │   ├── auth.js             # Endpoints de autenticação
+│   │   ├── news.js             # Endpoints de notícias
+│   │   ├── tenants.js          # Endpoints de tenants
+│   │   ├── users.js            # Endpoints de usuários
+│   │   └── logs.js             # Endpoints de activity logs
+│   │
+│   ├── hooks/                  # 🆕 Custom Hooks (lógica de negócio)
+│   │   ├── index.js            # Export central de todos os hooks
+│   │   ├── useNews.js          # Hook para operações de news
+│   │   ├── useTenants.js       # Hook para operações de tenants
+│   │   ├── useUsers.js         # Hook para operações de users
+│   │   └── useLogs.js          # Hook para operações de logs
+│   │
+│   ├── components/             # Componentes reutilizáveis
+│   │   ├── Breadcrumb.jsx      # Navegação hierárquica
+│   │   ├── ConfirmModal.jsx    # Modal de confirmação
 │   │   ├── Layout.jsx          # Layout principal com navbar
-│   │   ├── Pagination.jsx
-│   │   └── ProtectedRoute.jsx
+│   │   ├── Pagination.jsx      # Paginação customizável
+│   │   └── ProtectedRoute.jsx  # HOC para rotas autenticadas
 │   │
 │   ├── config/
-│   │   └── axios.js            # Configuração do axios
+│   │   └── axios.js            # Configuração do axios com interceptors
 │   │
-│   ├── contexts/
+│   ├── contexts/               # Context API (estado global)
 │   │   ├── AuthContext.jsx     # Gerenciamento de autenticação
-│   │   └── ToastContext.jsx    # Sistema de notificações
+│   │   └── ToastContext.jsx    # Sistema de notificações toast
 │   │
-│   └── pages/
+│   └── pages/                  # Páginas da aplicação
 │       ├── ActivityLogs.jsx    # Logs de atividade (Super Admin)
-│       ├── Dashboard.jsx       # Dashboard principal
+│       ├── Dashboard.jsx       # Dashboard principal com métricas
 │       ├── Login.jsx           # Página de login
-│       ├── NewsForm.jsx        # Criar/Editar notícia
-│       ├── NewsList.jsx        # Listar notícias
-│       ├── TenantDetail.jsx    # Detalhes do tenant
+│       ├── NewsForm.jsx        # Criar/Editar notícia + seletor de status
+│       ├── NewsList.jsx        # Listar notícias + filtros + badges
+│       ├── TenantDetail.jsx    # Detalhes do tenant + gerenciar membros
 │       ├── TenantsList.jsx     # Listar tenants (Super Admin)
 │       ├── UserForm.jsx        # Criar/Editar usuário
 │       └── UsersList.jsx       # Listar usuários
@@ -363,8 +382,9 @@ Role: editor
 | `DELETE` | `/api/news/{uuid}` | Deletar notícia | ✅ | Admin ou autor |
 
 **Filtros disponíveis:**
-- `?tenant_uuid={uuid}` - Filtrar por tenant
-- `?author_uuid={uuid}` - Filtrar por autor
+- `?tenant_uuid={uuid}` - Filtrar por tenant (Super Admin)
+- `?author_uuid={uuid}` - Filtrar por autor (Super Admin)
+- `?status={status}` - Filtrar por status (draft, published, archived, trash)
 - `?search={termo}` - Busca em título/conteúdo
 - `?per_page={n}` - Paginação
 
@@ -430,8 +450,13 @@ curl -X POST http://localhost:8000/api/news \
   -d '{
     "title": "Minha Notícia",
     "content": "Conteúdo da notícia...",
+    "status": "published",
     "tenant_uuid": "abc-123-..."
   }'
+
+# 4. Filtrar notícias publicadas
+curl -X GET "http://localhost:8000/api/news?status=published" \
+  -H "Authorization: Bearer {seu-token-aqui}"
 ```
 
 ---
@@ -471,16 +496,21 @@ curl -X POST http://localhost:8000/api/news \
 
 #### 3. **Lista de Notícias** (`/news`)
 - Tabela paginada
-- Filtros: Tenant, Autor, Busca textual
-- Botões: Visualizar, Editar, Excluir
+- **Filtros**: Tenant (Super Admin), Autor (Super Admin), Status, Busca textual
+- **Badges de status**: Rascunho, Publicado, Arquivado, Lixeira (com cores)
 - Badges de tenant
+- Botões: Visualizar, Editar, Excluir
 - Confirmação de exclusão
+- Arquitetura: `useNews` hook + `newsApi` module
 
 #### 4. **Formulário de Notícia** (`/news/create`, `/news/edit/:uuid`)
 - Criação e edição
-- Seleção de tenant (Super Admin)
+- **Seletor de tenant** (Super Admin - obrigatório ao criar)
+- **Seletor de status**: draft, published, archived, trash
 - Validação de campos
-- Feedback visual
+- Feedback visual com toast
+- Tenant bloqueado ao editar (somente leitura)
+- Arquitetura: `useNews` + `useTenants` hooks
 
 #### 5. **Lista de Usuários** (`/users`)
 - Tabela paginada
@@ -514,12 +544,61 @@ curl -X POST http://localhost:8000/api/news \
 - **Botão "Visualizar Detalhes"** com modal
 - Modal exibe: UUID, Data/Hora, Tipo, Modelo, Usuário, Tenant, Descrição, Valores Antigos, Valores Novos
 
-### Componentes Reutilizáveis
+### Módulos e Componentes
 
+#### **API Modules** (Camada de Dados)
+- **newsApi**: `getAll`, `getByUuid`, `create`, `update`, `delete`
+- **tenantsApi**: `getAll`, `getByUuid`, `create`, `update`, `delete`, `addUser`, `removeUser`
+- **usersApi**: `getAll`, `getByUuid`, `create`, `update`, `delete`
+- **authApi**: `login`, `logout`, `me`, `refresh`
+- **logsApi**: `getAll`, `getByUuid`
+
+#### **Custom Hooks** (Lógica de Negócio)
+- **useNews**: Gerencia operações de notícias com loading, error handling e toast
+- **useTenants**: Gerencia operações de tenants com loading, error handling e toast
+- **useUsers**: Gerencia operações de usuários com loading, error handling e toast
+- **useLogs**: Gerencia operações de logs com loading, error handling e toast
+
+#### **Componentes Reutilizáveis**
 - **Layout.jsx**: Navbar com menu e logout
 - **Breadcrumb.jsx**: Navegação hierárquica
-- **Pagination.jsx**: Paginação customizável
+- **Pagination.jsx**: Paginação customizável com controle de itens por página
 - **ProtectedRoute.jsx**: HOC para rotas autenticadas
+- **ConfirmModal.jsx**: Modal de confirmação reutilizável
+
+---
+
+## 📊 Sistema de Status de Publicação
+
+As notícias possuem **4 status de publicação**:
+
+| Status | Badge | Descrição | Uso |
+|--------|-------|-----------|-----|
+| **draft** | 📝 Rascunho (Cinza) | Notícias em elaboração | Padrão ao criar |
+| **published** | ✅ Publicado (Verde) | Notícias visíveis ao público | Aprovado para publicação |
+| **archived** | 📦 Arquivado (Azul) | Notícias antigas/inativas | Histórico |
+| **trash** | 🗑️ Lixeira (Vermelho) | Marcadas para exclusão | Antes de deletar |
+
+### Funcionalidades:
+
+- ✅ **Filtro por status**: Todos os usuários podem filtrar notícias por status
+- ✅ **Seletor no formulário**: Escolha o status ao criar/editar
+- ✅ **Badges coloridos**: Identificação visual rápida na listagem
+- ✅ **Status padrão**: Novas notícias são criadas como "draft"
+- ✅ **Validação**: Apenas status válidos são aceitos (backend + frontend)
+- ✅ **API Filter**: `GET /api/news?status=published`
+- ✅ **Scopes no Model**: `published()`, `withStatus()`, `notTrashed()`
+
+### Workflow Editorial Sugerido:
+
+```
+1. Criar notícia → status: draft (📝 Rascunho)
+2. Revisar/Editar → status: draft (📝 Rascunho)
+3. Aprovar → status: published (✅ Publicado)
+4. Desativar → status: archived (📦 Arquivado)
+5. Preparar exclusão → status: trash (🗑️ Lixeira)
+6. Excluir definitivamente → Soft Delete
+```
 
 ---
 
@@ -551,7 +630,8 @@ tests/Feature/
 #### Cobertura de Testes
 
 - ✅ **Autenticação**: Login, logout, refresh token, me
-- ✅ **News**: CRUD completo + autorização multi-tenant
+- ✅ **News**: CRUD completo + autorização multi-tenant + **status de publicação**
+- ✅ **Status de News**: Criar com status, filtrar por status, atualizar status, padrão draft
 - ✅ **Tenants**: CRUD (apenas Super Admin)
 - ✅ **Users**: CRUD + regras de negócio
 - ✅ **Policies**: Testes de autorização

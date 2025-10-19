@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from '../config/axios';
 import ConfirmModal from '../components/ConfirmModal';
 import Breadcrumb from '../components/Breadcrumb';
 import Pagination from '../components/Pagination';
-import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useNews, useTenants, useUsers } from '../hooks';
+import { newsApi } from '../api';
 
 export default function NewsList() {
+  const { user } = useAuth();
+  const { news: newsData, deleteNews, loading: newsLoading } = useNews();
+  const { tenants, fetchTenants } = useTenants();
+  const { users, fetchUsers } = useUsers();
+
   const [news, setNews] = useState([]);
-  const [tenants, setTenants] = useState([]);
-  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState('');
@@ -28,8 +31,6 @@ export default function NewsList() {
     per_page: 5,
     total: 0
   });
-  const toast = useToast();
-  const { user } = useAuth();
   
   // Render status badge with appropriate color
   const getStatusBadge = (status) => {
@@ -68,39 +69,17 @@ export default function NewsList() {
 
   useEffect(() => {
     if (user?.is_super_admin) {
-      fetchTenants();
+      fetchTenants({ per_page: 1000 });
       fetchUsers();
     }
-  }, [user]);
+  }, [user, fetchTenants, fetchUsers]);
 
   useEffect(() => {
-    if (news.length === 0) {
-      fetchNews(true); // Initial load
-    } else {
-      fetchNews(false); // Refetch
-    }
+    loadNews();
   }, [pagination.current_page]);
 
-  const fetchTenants = async () => {
-    try {
-      const response = await axios.get('/api/tenants?per_page=1000');
-      setTenants(response.data.data);
-    } catch (err) {
-      console.error('Erro ao carregar tenants:', err);
-    }
-  };
-
-  const fetchUsers = async () => {
-    try {
-      const response = await axios.get('/api/users');
-      setUsers(response.data.data || []);
-    } catch (err) {
-      console.error('Erro ao carregar usuários:', err);
-    }
-  };
-
-  const fetchNews = async (isInitialLoad = false, customFilters = null, customSearch = null) => {
-    if (isInitialLoad) {
+  const loadNews = async (customFilters = null, customSearch = null) => {
+    if (news.length === 0) {
       setLoading(true);
     } else {
       setFetching(true);
@@ -121,7 +100,7 @@ export default function NewsList() {
       if (activeFilters.author_uuid) params.author_uuid = activeFilters.author_uuid;
       if (activeSearch) params.search = activeSearch;
       
-      const response = await axios.get('/api/news', { params });
+      const response = await newsApi.getAll(params);
       setNews(response.data.data);
       setPagination(response.data.meta);
       setError('');
@@ -145,7 +124,7 @@ export default function NewsList() {
   
   const applyFilters = () => {
     setPagination(prev => ({ ...prev, current_page: 1 }));
-    fetchNews(false);
+    loadNews();
   };
   
   const handleSearch = (e) => {
@@ -154,7 +133,7 @@ export default function NewsList() {
   };
   
   const clearFilters = () => {
-    const emptyFilters = { tenant_uuid: '', author_uuid: '' };
+    const emptyFilters = { tenant_uuid: '', author_uuid: '', status: '' };
     const emptySearch = '';
     
     setFilters(emptyFilters);
@@ -162,7 +141,7 @@ export default function NewsList() {
     setPagination(prev => ({ ...prev, current_page: 1 }));
     
     // Passar filtros limpos diretamente para evitar problemas de timing com state
-    fetchNews(false, emptyFilters, emptySearch);
+    loadNews(emptyFilters, emptySearch);
   };
   
   // Filtrar usuários baseado no tenant selecionado
@@ -181,7 +160,7 @@ export default function NewsList() {
       current_page: 1 
     }));
     // Forçar refetch
-    setTimeout(() => fetchNews(false), 100);
+    setTimeout(() => loadNews(), 100);
   };
 
   const openDeleteModal = (newsItem) => {
@@ -198,15 +177,10 @@ export default function NewsList() {
     if (!newsToDelete) return;
 
     try {
-      await axios.delete(`/api/news/${newsToDelete.uuid}`);
-      toast.success('Notícia excluída com sucesso!');
+      await deleteNews(newsToDelete.uuid);
       closeDeleteModal();
-      
-      // Recarregar a lista para mostrar os próximos itens da paginação
-      fetchNews(false);
+      loadNews();
     } catch (err) {
-      toast.error('Erro ao excluir notícia. Tente novamente.');
-      console.error(err);
       closeDeleteModal();
     }
   };
