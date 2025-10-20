@@ -27,8 +27,10 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Redirecionar para login apenas se NÃO for a própria requisição de login
+    if (error.response?.status === 401 && error.config?.url !== '/api/login') {
       localStorage.removeItem('token');
+      localStorage.removeItem('role');
       window.location.href = '/login';
     }
     return Promise.reject(error);

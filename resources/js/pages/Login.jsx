@@ -19,7 +19,19 @@ export default function Login() {
       await login(email, password);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Falha no login. Verifique suas credenciais e tente novamente.');
+      // Traduzir mensagem de erro
+      let errorMessage = 'Falha no login. Verifique suas credenciais.';
+      
+      if (err.response?.data?.message) {
+        const msg = err.response.data.message.toLowerCase();
+        if (msg.includes('invalid') || msg.includes('unauthorized') || msg.includes('credentials')) {
+          errorMessage = 'Email ou senha incorretos.';
+        } else {
+          errorMessage = err.response.data.message;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -45,8 +57,35 @@ export default function Login() {
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
+            <div className="rounded-md bg-red-50 border border-red-300 p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start">
+                  <svg 
+                    className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+                    />
+                  </svg>
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setError('')}
+                  className="ml-2 flex-shrink-0 text-red-400 hover:text-red-600 transition-colors"
+                  title="Fechar"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
           )}
           <div className="rounded-md shadow-sm -space-y-px">
@@ -95,10 +134,10 @@ export default function Login() {
           <div className="text-sm text-center text-gray-600">
             <p className="mb-2 font-semibold">Credenciais de demonstração:</p>
             <div className="space-y-1 text-left bg-gray-100 p-3 rounded">
-              <p><strong>Super Admin:</strong> admin@instar.com</p>
               <p><strong>Portal Globo News:</strong> carlos.silva@globonews.com.br</p>
               <p><strong>Folha de São Paulo:</strong> joao.oliveira@folha.com.br</p>
               <p><strong>Estadão Digital:</strong> pedro.almeida@estadao.com.br</p>
+              <p><strong>Super Admin:</strong> admin@instar.com</p>
               <p className="mt-2 text-xs text-gray-500">Todas as senhas: <strong>password</strong></p>
             </div>
           </div>
