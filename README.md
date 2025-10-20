@@ -84,7 +84,7 @@ git --version
 
 ```bash
 git clone <repository-url>
-cd instar
+cd instar-news
 ```
 
 ### 2. Configure o ambiente
