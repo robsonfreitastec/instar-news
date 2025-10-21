@@ -13,29 +13,30 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchCounts();
-  }, []);
+    if (user) {
+      fetchCounts();
+    }
+  }, [user]);
 
   const fetchCounts = async () => {
     try {
-      const requests = [
-        newsApi.getAll({ per_page: 1 }),
-        user?.is_super_admin ? tenantsApi.getAll({ per_page: 1 }) : Promise.resolve({ data: { meta: { total: 0 } } }),
-        user?.is_super_admin ? usersApi.getAll({ per_page: 1 }) : Promise.resolve({ data: { meta: { total: 0 } } }),
-      ];
+      const requests = [newsApi.getAll({ per_page: 1 })];
 
       if (user?.is_super_admin) {
+        requests.push(tenantsApi.getAll({ per_page: 1 }));
+        requests.push(usersApi.getAll());
         requests.push(logsApi.getAll({ per_page: 1 }));
       }
 
       const results = await Promise.all(requests);
-      const [newsRes, tenantsRes, usersRes, logsRes] = results;
       
-      setNewsCount(newsRes.data.meta?.total || 0);
-      setTenantsCount(tenantsRes.data.meta?.total || 0);
-      setUsersCount(usersRes.data.meta?.total || 0);
-      if (user?.is_super_admin && logsRes) {
-        setLogsCount(logsRes.data.meta?.total || 0);
+      setNewsCount(results[0].data.meta?.total || 0);
+      
+      if (user?.is_super_admin) {
+        setTenantsCount(results[1].data.meta?.total || 0);
+        // Users retorna array direto, não paginado
+        setUsersCount(results[2].data.data?.length || 0);
+        setLogsCount(results[3].data.meta?.total || 0);
       }
     } catch (err) {
       console.error('Erro ao carregar contagens:', err);
